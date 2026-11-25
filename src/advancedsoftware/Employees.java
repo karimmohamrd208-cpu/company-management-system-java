@@ -17,24 +17,18 @@ import javax.swing.table.DefaultTableModel;
 public class Employees extends javax.swing.JPanel {
 
     @SuppressWarnings("FieldNameHidesFieldInSuperclass")
-    Connection con = null;
+            Connection con =MainFrame.con;
     PreparedStatement pst = null;
     ResultSet result = null;
-    String url = "jdbc:sqlserver://localhost:1433;databaseName=SoftCoreDB;encrypt=true;trustServerCertificate=true";
 
     public Employees() {
         initComponents();
-        try {
+        
 
-            con = DriverManager.getConnection(url, "1234", "1234");
-        } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, e);
-        }
-        if (con == null) {
-            return;
-        }
         loadDepartments();
-         loadEmployees();
+        loadEmployees();
+        loadDepartmentsIntoCheckCombo();
+        loadJopIntoCheckCombo() ;
 
         ((DefaultTableModel) Table.getModel()).setRowCount(0);
         try {
@@ -103,6 +97,31 @@ public class Employees extends javax.swing.JPanel {
         System.out.println("خطأ في تحميل الموظفين: " + e.getMessage());
     }
 }
+     private void loadDepartmentsIntoCheckCombo() {
+    try {
+        String sql = "SELECT department_id, dept_name FROM DEPARTMENTS ORDER BY dept_name";
+        pst    = con.prepareStatement(sql);
+        result = pst.executeQuery();
+        while (result.next()) {
+            departmentCheckBox.addItem(result.getString("dept_name"));
+        }
+    } catch (SQLException e) {
+        JOptionPane.showMessageDialog(this, "Error: " + e.getMessage());
+    }
+}
+      private void loadJopIntoCheckCombo() {
+    try {
+        String sql = "SELECT title_name FROM JOB_TITLES ORDER BY title_name";
+        pst    = con.prepareStatement(sql);
+        result = pst.executeQuery();
+        while (result.next()) {
+            jopTitleCheckBox.addItem(result.getString("title_name"));
+        }
+    } catch (SQLException e) {
+        JOptionPane.showMessageDialog(this, "Error: " + e.getMessage());
+    }
+}
+     
 
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
@@ -138,8 +157,7 @@ public class Employees extends javax.swing.JPanel {
 
         setPreferredSize(new java.awt.Dimension(375, 2980));
 
-        jPanel2.setBackground(new java.awt.Color(236, 233, 216));
-        jPanel2.setForeground(new java.awt.Color(0, 0, 0));
+        jPanel2.setBackground(new java.awt.Color(212, 208, 200));
 
         jLabel2.setText("Search:");
 
@@ -198,6 +216,8 @@ public class Employees extends javax.swing.JPanel {
                 .addGap(0, 0, Short.MAX_VALUE))
         );
 
+        jPanel3.setBackground(new java.awt.Color(212, 208, 200));
+
         Table.setAutoCreateRowSorter(true);
         Table.setBorder(new javax.swing.border.SoftBevelBorder(javax.swing.border.BevelBorder.RAISED));
         Table.setModel(new javax.swing.table.DefaultTableModel(
@@ -237,10 +257,11 @@ public class Employees extends javax.swing.JPanel {
         jLabel6.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
         jLabel6.setText("Hire Date");
 
-        jopTitleCheckBox.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "-- Select --", "Software", "AI & Data" }));
+        jopTitleCheckBox.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "-- Select --" }));
         jopTitleCheckBox.addActionListener(this::jopTitleCheckBoxActionPerformed);
 
-        departmentCheckBox.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Item 1", "Item 2", "Item 3", "AI & Data" }));
+        departmentCheckBox.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "-- Select --" }));
+        departmentCheckBox.addActionListener(this::departmentCheckBoxActionPerformed);
 
         jLabel7.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
         jLabel7.setText("Jop Title *");
@@ -363,18 +384,15 @@ public class Employees extends javax.swing.JPanel {
                 .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 251, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jPanel4, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(60, Short.MAX_VALUE))
+                .addContainerGap(2402, Short.MAX_VALUE))
         );
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(layout.createSequentialGroup()
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                    .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(jPanel3, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                .addGap(0, 0, Short.MAX_VALUE))
+            .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+            .addComponent(jPanel3, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -522,6 +540,10 @@ String search = fullNameSearch.getText().trim();
     JOptionPane.showMessageDialog(null, ex);
 }
     }//GEN-LAST:event_saveBtnActionPerformed
+
+    private void departmentCheckBoxActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_departmentCheckBoxActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_departmentCheckBoxActionPerformed
 
 
     // Variables declaration - do not modify//GEN-BEGIN:variables

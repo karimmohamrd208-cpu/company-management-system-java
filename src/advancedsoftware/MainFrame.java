@@ -3,6 +3,8 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/GUIForms/JFrame.java to edit this template
  */
 package advancedsoftware;
+import java.sql.*;
+import javax.swing.JOptionPane;
 
 /**
  *
@@ -10,13 +12,41 @@ package advancedsoftware;
  */
 public class MainFrame extends javax.swing.JFrame {
     
+    
+    String user = "1234"; 
+    String pass = "1234";
+    String databaseName = "SoftCoreDB";
+    
+//    private final String url = "jdbc:sqlserver://localhost:\\SQLEXPRESS;databaseNmae=" + databaseName 
+//            + ";user=" + user + ";password=" + pass + ";";
+    
+
+    private final String url = "jdbc:sqlserver://localhost:1433;databaseName=" + databaseName 
+        + ";user=" + user + ";password=" + pass 
+        + ";encrypt=true;trustServerCertificate=true;";
+    
+    public static Connection con;
     private static final java.util.logging.Logger logger = java.util.logging.Logger.getLogger(MainFrame.class.getName());
 
     /**
      * Creates new form MainFrame
      */
     public MainFrame() {
+        establishConnection();
         initComponents();
+        
+        
+    }
+  
+    public void establishConnection(){
+        try {
+            
+            Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
+            con = DriverManager.getConnection(url);
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "Error Connecting: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 
     /**
@@ -55,7 +85,7 @@ public class MainFrame extends javax.swing.JFrame {
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jTabbedPane1, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 613, Short.MAX_VALUE)
+            .addComponent(jTabbedPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 613, Short.MAX_VALUE)
         );
 
         pack();

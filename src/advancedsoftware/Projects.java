@@ -3,6 +3,12 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/GUIForms/JPanel.java to edit this template
  */
 package advancedsoftware;
+import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import javax.swing.JOptionPane;
+import javax.swing.table.DefaultTableModel;
 
 /**
  *
@@ -10,34 +16,90 @@ package advancedsoftware;
  */
 public class Projects extends javax.swing.JPanel {
 
-    /**
-     * Creates new form Projects
-     */
+ Connection con =MainFrame.con;
+    PreparedStatement pst = null;
+    ResultSet result = null;
+
     public Projects() {
         initComponents();
         loadTableData();
+        loadDepartmentsIntoCheckCombo();
+        loadClientsIntoCheckCombo();
+        loadManagerIntoCheckCombo();
+        
     }
 
     private void loadTableData() {
-        javax.swing.table.DefaultTableModel model = (javax.swing.table.DefaultTableModel) jTable1.getModel();
-        model.setRowCount(0);
-
+          
+       
         // بنجيب البيانات من الداتا بيز بالترتيب المناسب لأعمدة الجدول
-        try (java.sql.Connection conn = DatabaseManager.getConnection(); java.sql.ResultSet rs = conn.createStatement().executeQuery("SELECT project_name, price, client_id, manager_id, department_id FROM PROJECTS")) {
+      ((DefaultTableModel) jTable1.getModel()).setRowCount(0);
 
-            while (rs.next()) {
-                model.addRow(new Object[]{
-                    rs.getString("project_name"),
-                    rs.getDouble("price"),
-                    rs.getInt("client_id"),
-                    rs.getInt("manager_id"),
-                    rs.getInt("department_id")
+        try {
+
+            String sql =
+                    "SELECT p.project_id, p.project_name, p.price, " +
+                    "c.company_name, e.full_name AS manager_name, d.dept_name " +
+                    "FROM PROJECTS p " +
+                    "JOIN CLIENTS c ON p.client_id = c.client_id " +
+                    "JOIN EMPLOYEES e ON p.manager_id = e.employee_id " +
+                    "JOIN DEPARTMENTS d ON p.department_id = d.department_id " +
+                    "ORDER BY p.project_id";
+
+            pst = con.prepareStatement(sql);
+            result = pst.executeQuery();
+            while (result.next()) {
+
+                ((DefaultTableModel) jTable1.getModel()).addRow(new Object[]{
+                    result.getString("project_name"),
+                    String.format("%,.0f", result.getDouble("price")),
+                    result.getString("company_name"),
+                    result.getString("manager_name"),
+                    result.getString("dept_name")
                 });
             }
-        } catch (Exception e) {
-            javax.swing.JOptionPane.showMessageDialog(this, "خطأ في تحميل الجدول: " + e.getMessage());
+        } catch (SQLException e) {
+            JOptionPane.showMessageDialog(this,
+                    "خطأ في تحميل المشاريع : " + e.getMessage());
         }
     }
+    private void loadDepartmentsIntoCheckCombo() {
+    try {
+        String sql = "SELECT department_id, dept_name FROM DEPARTMENTS ORDER BY dept_name";
+        pst    = con.prepareStatement(sql);
+        result = pst.executeQuery();
+        while (result.next()) {
+            jComboBox1.addItem(result.getString("dept_name"));
+        }
+    } catch (SQLException e) {
+        JOptionPane.showMessageDialog(this, "Error: " + e.getMessage());
+    }
+}
+    
+     private void loadClientsIntoCheckCombo() {
+    try {
+        String sql = "SELECT contact_person FROM CLIENTS ORDER BY contact_person";
+        pst    = con.prepareStatement(sql);
+        result = pst.executeQuery();
+        while (result.next()) {
+            jComboBox3.addItem(result.getString("contact_person"));
+        }
+    } catch (SQLException e) {
+        JOptionPane.showMessageDialog(this, "Error: " + e.getMessage());
+    }
+}
+    private void loadManagerIntoCheckCombo() {
+    try {
+        String sql = "SELECT full_name FROM EMPLOYEES ORDER BY full_name";
+        pst    = con.prepareStatement(sql);
+        result = pst.executeQuery();
+        while (result.next()) {
+            jComboBox4.addItem(result.getString("full_name"));
+        }
+    } catch (SQLException e) {
+        JOptionPane.showMessageDialog(this, "Error: " + e.getMessage());
+    }
+}
     
     
 
@@ -57,16 +119,19 @@ public class Projects extends javax.swing.JPanel {
         jLabel5 = new javax.swing.JLabel();
         jLabel6 = new javax.swing.JLabel();
         budget = new javax.swing.JTextField();
-        client = new javax.swing.JTextField();
-        mana = new javax.swing.JTextField();
         proname = new javax.swing.JTextField();
-        deb = new javax.swing.JTextField();
         addProj = new javax.swing.JButton();
         deleproj = new javax.swing.JButton();
         updatepro = new javax.swing.JButton();
-        SelectProj = new javax.swing.JButton();
         jScrollPane1 = new javax.swing.JScrollPane();
         jTable1 = new javax.swing.JTable();
+        jComboBox1 = new javax.swing.JComboBox<>();
+        jLabel7 = new javax.swing.JLabel();
+        jTextField1 = new javax.swing.JTextField();
+        jComboBox2 = new javax.swing.JComboBox<>();
+        jLabel8 = new javax.swing.JLabel();
+        jComboBox3 = new javax.swing.JComboBox<>();
+        jComboBox4 = new javax.swing.JComboBox<>();
 
         jLabel1.setFont(new java.awt.Font("Liberation Sans", 1, 24)); // NOI18N
         jLabel1.setForeground(new java.awt.Color(0, 0, 255));
@@ -84,13 +149,7 @@ public class Projects extends javax.swing.JPanel {
 
         budget.addActionListener(this::budgetActionPerformed);
 
-        client.addActionListener(this::clientActionPerformed);
-
-        mana.addActionListener(this::manaActionPerformed);
-
         proname.addActionListener(this::pronameActionPerformed);
-
-        deb.addActionListener(this::debActionPerformed);
 
         addProj.setText("Add Project");
         addProj.addActionListener(this::addProjActionPerformed);
@@ -100,9 +159,6 @@ public class Projects extends javax.swing.JPanel {
 
         updatepro.setText("Update Project");
         updatepro.addActionListener(this::updateproActionPerformed);
-
-        SelectProj.setText("Select Projects");
-        SelectProj.addActionListener(this::SelectProjActionPerformed);
 
         jTable1.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
@@ -125,54 +181,73 @@ public class Projects extends javax.swing.JPanel {
         });
         jScrollPane1.setViewportView(jTable1);
 
+        jComboBox1.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "-- Select --" }));
+
+        jLabel7.setText("Search");
+
+        jComboBox2.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Item 1", "Item 2", "Item 3", "Item 4" }));
+
+        jLabel8.setText("Status");
+
+        jComboBox3.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "-- Select --" }));
+
+        jComboBox4.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "-- Select --" }));
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
+                .addGap(133, 133, 133)
+                .addComponent(updatepro)
+                .addGap(0, 0, Short.MAX_VALUE))
+            .addGroup(layout.createSequentialGroup()
+                .addGap(15, 15, 15)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(layout.createSequentialGroup()
-                        .addGap(15, 15, 15)
+                        .addComponent(jLabel6)
+                        .addGap(18, 18, 18)
+                        .addComponent(jComboBox1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
+                        .addGroup(layout.createSequentialGroup()
+                            .addComponent(jLabel2)
+                            .addGap(18, 18, 18)
+                            .addComponent(proname, javax.swing.GroupLayout.PREFERRED_SIZE, 208, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addGroup(layout.createSequentialGroup()
+                            .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                .addComponent(jLabel3)
+                                .addComponent(jLabel4)
+                                .addComponent(jLabel5))
+                            .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                .addComponent(jComboBox4, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addComponent(jComboBox3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addComponent(budget, javax.swing.GroupLayout.PREFERRED_SIZE, 208, javax.swing.GroupLayout.PREFERRED_SIZE))))
+                    .addComponent(addProj))
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(layout.createSequentialGroup()
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addGroup(layout.createSequentialGroup()
-                                .addComponent(jLabel3)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(budget, javax.swing.GroupLayout.PREFERRED_SIZE, 208, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                .addComponent(deleproj)
+                                .addGap(0, 0, Short.MAX_VALUE))
                             .addGroup(layout.createSequentialGroup()
-                                .addComponent(jLabel2)
+                                .addGap(14, 14, 14)
+                                .addComponent(jLabel1)
+                                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))))
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 42, Short.MAX_VALUE)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addGroup(layout.createSequentialGroup()
+                                .addComponent(jLabel7)
                                 .addGap(18, 18, 18)
-                                .addComponent(proname, javax.swing.GroupLayout.PREFERRED_SIZE, 208, javax.swing.GroupLayout.PREFERRED_SIZE))
-                            .addGroup(layout.createSequentialGroup()
-                                .addComponent(jLabel4)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(client, javax.swing.GroupLayout.PREFERRED_SIZE, 208, javax.swing.GroupLayout.PREFERRED_SIZE))
-                            .addGroup(layout.createSequentialGroup()
-                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                    .addGroup(layout.createSequentialGroup()
-                                        .addComponent(jLabel5)
-                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                        .addComponent(mana, javax.swing.GroupLayout.PREFERRED_SIZE, 208, javax.swing.GroupLayout.PREFERRED_SIZE))
-                                    .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
-                                        .addGroup(javax.swing.GroupLayout.Alignment.LEADING, layout.createSequentialGroup()
-                                            .addGap(25, 25, 25)
-                                            .addComponent(addProj)
-                                            .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                            .addComponent(deleproj))
-                                        .addGroup(javax.swing.GroupLayout.Alignment.LEADING, layout.createSequentialGroup()
-                                            .addComponent(jLabel6)
-                                            .addGap(18, 18, 18)
-                                            .addComponent(deb, javax.swing.GroupLayout.PREFERRED_SIZE, 208, javax.swing.GroupLayout.PREFERRED_SIZE))))
-                                .addGap(253, 253, 253)
-                                .addComponent(SelectProj))))
-                    .addGroup(layout.createSequentialGroup()
-                        .addGap(173, 173, 173)
-                        .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addGroup(layout.createSequentialGroup()
-                        .addGap(362, 362, 362)
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                            .addComponent(updatepro)
-                            .addComponent(jLabel1))))
-                .addContainerGap(387, Short.MAX_VALUE))
+                                .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, 173, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addGap(126, 126, 126)
+                                .addComponent(jLabel8)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                                .addComponent(jComboBox2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                            .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 605, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addContainerGap())))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -187,26 +262,32 @@ public class Projects extends javax.swing.JPanel {
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabel3)
                     .addComponent(budget, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addGap(22, 22, 22)
+                .addGap(21, 21, 21)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jComboBox3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel7, javax.swing.GroupLayout.PREFERRED_SIZE, 23, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel8)
                     .addComponent(jLabel4)
-                    .addComponent(client, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(jComboBox2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addGap(18, 18, 18)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(layout.createSequentialGroup()
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(jLabel5)
+                            .addComponent(jComboBox4, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addGap(20, 20, 20)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(jLabel6)
+                            .addComponent(jComboBox1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                    .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 104, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jLabel5)
-                    .addComponent(mana, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addGap(20, 20, 20)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jLabel6)
-                    .addComponent(deb, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addGap(46, 46, 46)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(addProj)
-                    .addComponent(deleproj)
-                    .addComponent(updatepro)
-                    .addComponent(SelectProj))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 18, Short.MAX_VALUE)
-                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 265, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(addProj, javax.swing.GroupLayout.PREFERRED_SIZE, 31, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(updatepro, javax.swing.GroupLayout.PREFERRED_SIZE, 31, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGap(70, 70, 70)
+                .addComponent(deleproj, javax.swing.GroupLayout.PREFERRED_SIZE, 41, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(107, Short.MAX_VALUE))
         );
     }// </editor-fold>//GEN-END:initComponents
 
@@ -214,99 +295,43 @@ public class Projects extends javax.swing.JPanel {
         // TODO add your handling code here:
     }//GEN-LAST:event_budgetActionPerformed
 
-    private void clientActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_clientActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_clientActionPerformed
-
-    private void manaActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_manaActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_manaActionPerformed
-
     private void pronameActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_pronameActionPerformed
         // TODO add your handling code here:
     }//GEN-LAST:event_pronameActionPerformed
 
-    private void debActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_debActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_debActionPerformed
-
     private void addProjActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_addProjActionPerformed
-        try (java.sql.Connection conn = DatabaseManager.getConnection(); java.sql.PreparedStatement ps = conn.prepareStatement("INSERT INTO PROJECTS (project_name, status , price, manager_id, client_id, department_id) VALUES (?, 'active', ?, ?, ?, ?)")) {
-            ps.setString(1, proname.getText()); // بناخد اسم المشروع من التيكست بوكس
-            ps.setDouble(2, Double.parseDouble(budget.getText())); // بنحول الميزانية لرقم عشري
-            ps.setInt(3, Integer.parseInt(mana.getText())); // بناخد اسم المدير
-            ps.setInt(4, Integer.parseInt(client.getText())); // بناخد اسم العميل
-            ps.setInt(5, Integer.parseInt(deb.getText())); // بناخد اسم القسم
-
-            ps.executeUpdate(); // بننفذ الأمر عشان البيانات تتحفظ بجد
-            loadTableData(); // تحديث الجدول بالبيانات الجديدة
-            javax.swing.JOptionPane.showMessageDialog(this, "Project Added successfully"); // بنطلع رسالة نجاح للمستخدم
-
-        } catch (Exception e) {
-            javax.swing.JOptionPane.showMessageDialog(this, e.getMessage()); // لو حصل مشكلة بنعرض الخطأ
+  
 
     }//GEN-LAST:event_addProjActionPerformed
-    }
+    
     private void deleprojActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_deleprojActionPerformed
-        try (java.sql.Connection conn = DatabaseManager.getConnection(); java.sql.PreparedStatement ps = conn.prepareStatement("DELETE FROM PROJECTS WHERE project_name = ?")) {
-
-            ps.setString(1, proname.getText()); // بناخد الاسم المكتوب في التيكست بوكس
-            ps.executeUpdate(); // بننفذ أمر الحذف في الداتا بيز
-            loadTableData(); // تحديث الجدول بالبيانات المعدلة
-
-            javax.swing.JOptionPane.showMessageDialog(this, "Project Deleted successfully "); // بنظهر رسالة تأكيد
-        } catch (Exception e) {
-            javax.swing.JOptionPane.showMessageDialog(this, e.getMessage()); // بنعرض الخطأ لو حصل
-        }
+     
     }//GEN-LAST:event_deleprojActionPerformed
 
     private void updateproActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_updateproActionPerformed
-        try (java.sql.Connection conn = DatabaseManager.getConnection(); java.sql.PreparedStatement ps = conn.prepareStatement("UPDATE PROJECTS SET price=?, manager=?, client=?, department=? WHERE project_name=?")) {
 
-            ps.setDouble(1, Double.parseDouble(budget.getText())); // بنحدث الميزانية
-            ps.setString(2, mana.getText()); // بنحدث اسم المدير
-            ps.setString(3, client.getText()); // بنحدث اسم العميل
-            ps.setString(4, deb.getText()); // بنحدث اسم القسم
-            ps.setString(5, proname.getText()); // ده اسم المشروع اللي بندور عليه عشان نعدله
-
-            ps.executeUpdate(); // بننفذ التعديل في الداتا بيز
-            loadTableData(); // تحديث الجدول بالبيانات المعدلة
-            javax.swing.JOptionPane.showMessageDialog(this, "Project Updated successfully"); // بنطلع رسالة التأكيد
-        } catch (Exception e) {
-            javax.swing.JOptionPane.showMessageDialog(this, e.getMessage()); // عرض الخطأ لو موجود
-        }
     }//GEN-LAST:event_updateproActionPerformed
-
-    private void SelectProjActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_SelectProjActionPerformed
-        int row = jTable1.getSelectedRow(); // بنجيب رقم الصف اللي المستخدم اختاره من الجدول
-        if (row == -1) {
-            return; // لو مفيش صف متحدد، بنوقف التنفيذ فوراً عشان ميحصلش إيرور
-        }
-        // بنسحب البيانات من أعمدة الجدول بالترتيب ونعبيها في التيكست بوكس
-        proname.setText(jTable1.getValueAt(row, 0).toString());
-        budget.setText(jTable1.getValueAt(row, 1).toString());
-        mana.setText(jTable1.getValueAt(row, 2).toString());
-        client.setText(jTable1.getValueAt(row, 3).toString());
-        deb.setText(jTable1.getValueAt(row, 4).toString());
-    }//GEN-LAST:event_SelectProjActionPerformed
 
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JButton SelectProj;
     private javax.swing.JButton addProj;
     private javax.swing.JTextField budget;
-    private javax.swing.JTextField client;
-    private javax.swing.JTextField deb;
     private javax.swing.JButton deleproj;
+    private javax.swing.JComboBox<String> jComboBox1;
+    private javax.swing.JComboBox<String> jComboBox2;
+    private javax.swing.JComboBox<String> jComboBox3;
+    private javax.swing.JComboBox<String> jComboBox4;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
     private javax.swing.JLabel jLabel4;
     private javax.swing.JLabel jLabel5;
     private javax.swing.JLabel jLabel6;
+    private javax.swing.JLabel jLabel7;
+    private javax.swing.JLabel jLabel8;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JTable jTable1;
-    private javax.swing.JTextField mana;
+    private javax.swing.JTextField jTextField1;
     private javax.swing.JTextField proname;
     private javax.swing.JButton updatepro;
     // End of variables declaration//GEN-END:variables
